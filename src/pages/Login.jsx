@@ -1,12 +1,25 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { ShieldCheck, Lock, Activity, CheckCircle2, AlertCircle, Sparkles } from 'lucide-react';
+import { 
+  ShieldCheck, 
+  Lock, 
+  Activity, 
+  CheckCircle2, 
+  AlertCircle, 
+  Sparkles, 
+  Copy, 
+  Check, 
+  ExternalLink,
+  HelpCircle,
+  Play
+} from 'lucide-react';
 
 export default function Login() {
   const { loginWithGoogle, loginGuest, user, authError, setAuthError } = useAuth();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [copiedDomain, setCopiedDomain] = useState(false);
 
   // Si déjà connecté, rediriger vers l'accueil
   React.useEffect(() => {
@@ -21,7 +34,7 @@ export default function Login() {
       await loginWithGoogle();
       navigate('/', { replace: true });
     } catch (err) {
-      // Message déjà géré dans AuthContext
+      // Géré dans AuthContext
     } finally {
       setIsSubmitting(false);
     }
@@ -33,21 +46,32 @@ export default function Login() {
       await loginGuest();
       navigate('/', { replace: true });
     } catch (err) {
-      // géré
+      console.error(err);
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const handleCopyDomain = (domainToCopy) => {
+    if (navigator?.clipboard) {
+      navigator.clipboard.writeText(domainToCopy);
+      setCopiedDomain(true);
+      setTimeout(() => setCopiedDomain(false), 2500);
+    }
+  };
+
+  const currentHost = typeof window !== 'undefined' ? window.location.hostname : '';
+  const isUnauthorizedDomain = authError && typeof authError === 'object' && authError.code === 'auth/unauthorized-domain';
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50/70 via-white to-slate-50 flex flex-col justify-between p-5 max-w-md mx-auto">
       {/* Haut de page & Logo */}
-      <div className="pt-8 sm:pt-12 text-center">
-        <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-blue-600 text-white shadow-xl shadow-blue-500/25 mb-5 transform transition-transform hover:scale-105">
+      <div className="pt-6 sm:pt-10 text-center">
+        <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-blue-600 text-white shadow-xl shadow-blue-500/25 mb-4 transform transition-transform hover:scale-105">
           <Activity className="w-10 h-10" />
         </div>
 
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-100/80 text-blue-800 text-xs font-semibold mb-3">
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-100/80 text-blue-800 text-xs font-semibold mb-2">
           <Sparkles className="w-3.5 h-3.5 text-blue-600" />
           Protocole VVG Sécurisé
         </div>
@@ -55,56 +79,101 @@ export default function Login() {
         <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
           Suivi VVG
         </h1>
-        <p className="text-slate-600 text-sm mt-2 max-w-xs mx-auto leading-relaxed">
+        <p className="text-slate-600 text-xs sm:text-sm mt-1.5 max-w-xs mx-auto leading-relaxed">
           Votre carnet numérique personnel pour la traçabilité et la rotation de vos injections sous-cutanées.
         </p>
       </div>
 
-      {/* Carte des garanties médicales */}
-      <div className="my-6 bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm space-y-3.5">
-        <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Fonctionnalités clés</h2>
-        
-        <div className="flex items-start gap-3">
-          <div className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5">
-            <CheckCircle2 className="w-4 h-4" />
+      {/* Guide spécifique si le domaine Firebase n'est pas encore autorisé */}
+      {isUnauthorizedDomain ? (
+        <div className="my-4 bg-amber-50 border-2 border-amber-300 rounded-2xl p-4 shadow-sm text-left space-y-3 animate-in fade-in">
+          <div className="flex items-start gap-2.5">
+            <AlertCircle className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
+            <div>
+              <h3 className="text-xs font-bold text-amber-950 uppercase tracking-wide">
+                Domaine à autoriser dans Firebase Console
+              </h3>
+              <p className="text-xs text-amber-900 mt-1">
+                Google bloque la connexion car l'adresse de prévisualisation n'est pas encore enregistrée dans votre projet <strong>carnet-medical-ca19c</strong>.
+              </p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-xs font-semibold text-slate-800">Rotation intelligente des quadrants</h3>
-            <p className="text-[11px] text-slate-500">Alternance 1 → 2 → 4 → 3 pour préserver les tissus sous-cutanés.</p>
-          </div>
-        </div>
 
-        <div className="flex items-start gap-3">
-          <div className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 mt-0.5">
-            <CheckCircle2 className="w-4 h-4" />
+          <div className="bg-white p-2.5 rounded-xl border border-amber-200 flex items-center justify-between gap-2">
+            <span className="text-xs font-mono text-slate-800 break-all select-all font-semibold">
+              {currentHost}
+            </span>
+            <button
+              onClick={() => handleCopyDomain(currentHost)}
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-amber-100 hover:bg-amber-200 text-amber-900 rounded-lg text-xs font-bold shrink-0 transition-colors cursor-pointer"
+            >
+              {copiedDomain ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+              <span>{copiedDomain ? 'Copié !' : 'Copier'}</span>
+            </button>
           </div>
-          <div>
-            <h3 className="text-xs font-semibold text-slate-800">Traçabilité complète des lots</h3>
-            <p className="text-[11px] text-slate-500">Numéros de lot et dates d'expiration enregistrés à chaque prise.</p>
-          </div>
-        </div>
 
-        <div className="flex items-start gap-3">
-          <div className="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 mt-0.5">
-            <CheckCircle2 className="w-4 h-4" />
-          </div>
-          <div>
-            <h3 className="text-xs font-semibold text-slate-800">Export PDF pour votre médecin</h3>
-            <p className="text-[11px] text-slate-500">Relevé officiel téléchargeable en un clic à tout moment.</p>
+          <ol className="text-[11px] text-amber-900 space-y-1 list-decimal list-inside bg-amber-100/50 p-2.5 rounded-xl">
+            <li>Ouvrez votre console Firebase (Authentication &gt; Settings &gt; Authorized domains).</li>
+            <li>Collez le domaine ci-dessus et enregistrez.</li>
+          </ol>
+
+          <div className="pt-1">
+            <button
+              onClick={handleGuestLogin}
+              className="w-full py-2.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm transition-colors cursor-pointer"
+            >
+              <Play className="w-3.5 h-3.5 fill-current" />
+              <span>Tester immédiatement en mode Démo</span>
+            </button>
           </div>
         </div>
-      </div>
+      ) : (
+        /* Carte des garanties médicales standard */
+        <div className="my-5 bg-white rounded-2xl border border-slate-200/80 p-4 shadow-sm space-y-3">
+          <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Fonctionnalités clés</h2>
+          
+          <div className="flex items-start gap-3">
+            <div className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5">
+              <CheckCircle2 className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="text-xs font-semibold text-slate-800">Rotation intelligente des 4 quadrants</h3>
+              <p className="text-[11px] text-slate-500">Ordre médical : 1 → 2 → 4 → 3 pour préserver les tissus.</p>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3">
+            <div className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 mt-0.5">
+              <CheckCircle2 className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="text-xs font-semibold text-slate-800">Traçabilité complète des flacons</h3>
+              <p className="text-[11px] text-slate-500">Numéros de lot et péremption archivés à chaque injection.</p>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3">
+            <div className="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 mt-0.5">
+              <CheckCircle2 className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="text-xs font-semibold text-slate-800">Export PDF officiel pour médecin</h3>
+              <p className="text-[11px] text-slate-500">Génération du relevé complet en un clic.</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Section Connexion */}
-      <div className="space-y-3.5 pb-6">
-        {authError && (
+      <div className="space-y-3 pb-4">
+        {authError && !isUnauthorizedDomain && (
           <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl flex items-start gap-2">
             <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-            <span>{authError}</span>
+            <span>{typeof authError === 'object' ? authError.message : authError}</span>
           </div>
         )}
 
-        {/* Gros bouton Google Sign-In */}
+        {/* Bouton Google Sign-In */}
         <button
           onClick={handleGoogleLogin}
           disabled={isSubmitting}
@@ -132,13 +201,14 @@ export default function Login() {
           <span className="text-sm sm:text-base">Se connecter avec Google</span>
         </button>
 
-        {/* Option de secours / démo rapide */}
+        {/* Option Démo Résiliente */}
         <button
           onClick={handleGuestLogin}
           disabled={isSubmitting}
-          className="w-full py-2.5 text-xs text-slate-500 hover:text-slate-800 font-medium transition-colors cursor-pointer text-center"
+          className="w-full py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer"
         >
-          Continuer en mode démonstration privée
+          <Play className="w-3.5 h-3.5 text-blue-600 fill-current" />
+          <span>Continuer en mode démonstration privée</span>
         </button>
 
         {/* Mention de sécurité obligatoire */}

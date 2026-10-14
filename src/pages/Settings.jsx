@@ -14,7 +14,8 @@ import {
   Smartphone, 
   ShieldCheck, 
   Info,
-  Loader2
+  Loader2,
+  Sparkles
 } from 'lucide-react';
 
 export default function Settings() {
@@ -281,13 +282,16 @@ export default function Settings() {
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <p className="text-xs font-bold text-slate-900 truncate max-w-[200px] sm:max-w-xs">
-                {user?.email || 'Utilisateur anonyme'}
+                {user?.isDemo ? 'Patient Démonstration (Local)' : (user?.email || 'Utilisateur')}
               </p>
               <p className="text-[11px] text-slate-400">
-                Données chiffrées et isolées dans Google Firestore
+                {user?.isDemo ? 'Session locale active · Non connectée au cloud' : 'Données synchronisées dans Google Firestore'}
               </p>
             </div>
-            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-4 ring-emerald-100" title="Connecté" />
+            <div 
+              className={`w-2.5 h-2.5 rounded-full ring-4 ${user?.isDemo ? 'bg-amber-500 ring-amber-100' : 'bg-emerald-500 ring-emerald-100'}`} 
+              title={user?.isDemo ? 'Mode Démo' : 'Connecté Cloud'} 
+            />
           </div>
 
           <button
