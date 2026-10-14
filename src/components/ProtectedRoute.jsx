@@ -12,7 +12,7 @@ export default function ProtectedRoute() {
         <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center text-white mb-4 animate-pulse shadow-lg shadow-blue-500/25">
           <Loader2 className="w-6 h-6 animate-spin" />
         </div>
-        <p className="text-slate-600 font-medium text-sm">Chargement de votre carnet VVG...</p>
+        <p className="text-slate-600 font-medium text-sm">Chargement de votre carnet VYVGART...</p>
       </div>
     );
   }

@@ -20,9 +20,9 @@ export default function NewInjection() {
   const navigate = useNavigate();
   const { addInjection, nextSuggestedZone, lastInjection } = useInjections();
 
-  // Date et heure actuelles par défaut (au format datetime-local HTML5 : YYYY-MM-DDTHH:mm)
-  const [dateTimeStr, setDateTimeStr] = useState(() => {
-    return format(new Date(), "yyyy-MM-dd'T'HH:mm");
+  // Date de l'injection par défaut (au format date HTML5 : YYYY-MM-DD)
+  const [dateStr, setDateStr] = useState(() => {
+    return format(new Date(), 'yyyy-MM-dd');
   });
 
   // Zone pré-sélectionnée avec la zone suggérée
@@ -70,8 +70,8 @@ export default function NewInjection() {
     setIsSubmitting(true);
 
     try {
-      const injectionDate = new Date(dateTimeStr);
-      const expirationDate = new Date(expirationDateStr);
+      const injectionDate = new Date(dateStr + 'T12:00:00');
+      const expirationDate = new Date(expirationDateStr + 'T12:00:00');
 
       await addInjection({
         date: injectionDate,
@@ -107,7 +107,7 @@ export default function NewInjection() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-            Nouvelle Injection VVG
+            Nouvelle Injection VYVGART
           </h2>
           <p className="text-xs text-slate-500">
             Enregistrez les informations pour la traçabilité du traitement
@@ -123,22 +123,22 @@ export default function NewInjection() {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-5">
-        {/* Date et Heure */}
+        {/* Date de l'injection */}
         <div className="bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-5 shadow-xs space-y-2">
           <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-            Date & Heure de l'injection
+            Date de l'injection
           </label>
           <div className="relative">
             <input
-              type="datetime-local"
-              value={dateTimeStr}
-              onChange={(e) => setDateTimeStr(e.target.value)}
+              type="date"
+              value={dateStr}
+              onChange={(e) => setDateStr(e.target.value)}
               required
               className="w-full px-3.5 py-3 rounded-xl border border-slate-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 text-slate-900 text-sm font-medium bg-slate-50/50 outline-none transition-all"
             />
           </div>
           <p className="text-[11px] text-slate-400">
-            Par défaut réglé sur l'heure actuelle. Modifiable si vous notez l'injection a posteriori.
+            Sélectionnez le jour de réalisation de l'injection.
           </p>
         </div>
 
@@ -177,7 +177,7 @@ export default function NewInjection() {
             <div className="relative">
               <input
                 type="text"
-                placeholder="Ex: VVG-9428-B"
+                placeholder="Ex: VYV-9428-B"
                 value={lotNumber}
                 onChange={(e) => setLotNumber(e.target.value.toUpperCase())}
                 required
@@ -186,7 +186,7 @@ export default function NewInjection() {
               />
             </div>
             <p className="text-[11px] text-slate-400">
-              Inscrit sur la boîte ou directement sur le corps du stylo VVG.
+              Inscrit sur la boîte ou directement sur le corps du stylo / flacon VYVGART.
             </p>
           </div>
 

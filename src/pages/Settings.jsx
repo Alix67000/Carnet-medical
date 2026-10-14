@@ -77,8 +77,8 @@ export default function Settings() {
 
       if (perm === 'granted') {
         try {
-          new Notification('Rappel Suivi VVG', {
-            body: `C'est le moment de réaliser votre injection de VVG (Zone recommandée calculée)`,
+          new Notification('Rappel Suivi VYVGART', {
+            body: `C'est le moment de réaliser votre injection de VYVGART (Zone recommandée calculée)`,
             icon: '/pwa-192x192.png',
             badge: '/pwa-192x192.png',
           });
@@ -91,7 +91,7 @@ export default function Settings() {
     }
 
     // Fallback notification in-app
-    setTestNotifMessage('Rappel simulé : C\'est le moment de réaliser votre injection hebdomadaire de VVG !');
+    setTestNotifMessage('Rappel simulé : C\'est le moment de réaliser votre injection hebdomadaire de VYVGART !');
   };
 
   return (
@@ -177,7 +177,7 @@ export default function Settings() {
             </div>
 
             <p className="text-[11px] text-slate-400">
-              Le protocole standard du VVG prescrit généralement 1 injection tous les 7 jours.
+              Le protocole standard de VYVGART prescrit généralement 1 injection tous les 7 jours.
             </p>
           </div>
         </div>
@@ -259,7 +259,7 @@ export default function Settings() {
               className="w-full py-2.5 px-4 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-xs font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer"
             >
               <Download className="w-4 h-4 text-blue-600" />
-              <span>Installer Suivi VVG sur cet appareil</span>
+              <span>Installer Suivi VYVGART sur cet appareil</span>
             </button>
           )}
 

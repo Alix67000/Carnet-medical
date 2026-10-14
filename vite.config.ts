@@ -14,9 +14,9 @@ export default defineConfig(() => {
         includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'icon.svg'],
         manifest: {
           id: '/',
-          name: "Suivi VVG - Carnet d'Injections",
-          short_name: 'Suivi VVG',
-          description: "Suivi personnel des injections de traitement VVG avec rotation des zones et traçabilité médicale.",
+          name: "Suivi VYVGART - Carnet d'Injections",
+          short_name: 'Suivi VYVGART',
+          description: "Suivi personnel des injections de traitement VYVGART avec rotation des zones et traçabilité médicale.",
           theme_color: '#2563eb',
           background_color: '#ffffff',
           display: 'standalone',

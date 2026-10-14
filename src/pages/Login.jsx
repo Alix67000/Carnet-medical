@@ -73,14 +73,14 @@ export default function Login() {
 
         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-100/80 text-blue-800 text-xs font-semibold mb-2">
           <Sparkles className="w-3.5 h-3.5 text-blue-600" />
-          Protocole VVG Sécurisé
+          Protocole VYVGART Sécurisé
         </div>
 
         <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
-          Suivi VVG
+          Suivi VYVGART
         </h1>
         <p className="text-slate-600 text-xs sm:text-sm mt-1.5 max-w-xs mx-auto leading-relaxed">
-          Votre carnet numérique personnel pour la traçabilité et la rotation de vos injections sous-cutanées.
+          Votre carnet numérique personnel pour la traçabilité et la rotation de vos injections sous-cutanées de VYVGART.
         </p>
       </div>
 
@@ -141,7 +141,7 @@ export default function Login() {
             </div>
             <div>
               <h3 className="text-xs font-semibold text-slate-800">Rotation intelligente des 4 quadrants</h3>
-              <p className="text-[11px] text-slate-500">Ordre médical : 1 → 2 → 4 → 3 pour préserver les tissus.</p>
+              <p className="text-[11px] text-slate-500">Ordre médical : 1 → 2 → 3 → 4 pour préserver les tissus.</p>
             </div>
           </div>
 

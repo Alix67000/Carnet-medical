@@ -20,11 +20,11 @@ export default function TopHeader() {
       <div className="max-w-md mx-auto flex items-center justify-between">
         {/* Brand / Logo */}
         <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-blue-500 flex items-center justify-center text-white shadow-sm shadow-blue-500/20 font-black text-sm tracking-tighter">
-            VVG
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-blue-500 flex items-center justify-center text-white shadow-sm shadow-blue-500/20 font-black text-xs tracking-tighter">
+            VYV
           </div>
           <div>
-            <h1 className="text-base font-bold text-slate-900 leading-tight">Suivi VVG</h1>
+            <h1 className="text-base font-bold text-slate-900 leading-tight">Suivi VYVGART</h1>
             <p className="text-[11px] text-slate-500 flex items-center gap-1">
               <ShieldCheck className="w-3 h-3 text-emerald-600" />
               Traçabilité médicale

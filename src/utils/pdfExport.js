@@ -29,7 +29,7 @@ export function exportInjectionsToPDF(injections, preferences, user) {
   doc.setTextColor(255, 255, 255);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(14);
-  doc.text('SUIVI MÉDICAL DU TRAITEMENT VVG', 14, 14);
+  doc.text('SUIVI MÉDICAL DU TRAITEMENT VYVGART', 14, 14);
 
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
@@ -71,7 +71,7 @@ export function exportInjectionsToPDF(injections, preferences, user) {
   // Préparation des lignes de la table
   const tableRows = injections.map((inj, index) => {
     const num = injections.length - index;
-    const dateStr = inj.date ? format(inj.date, "dd/MM/yyyy 'à' HH:mm", { locale: fr }) : '-';
+    const dateStr = inj.date ? format(inj.date, "dd/MM/yyyy", { locale: fr }) : '-';
     const zoneInfo = getZoneInfo(inj.zone);
     const expDateStr = inj.expirationDate ? format(inj.expirationDate, 'dd/MM/yyyy', { locale: fr }) : '-';
 
@@ -88,7 +88,7 @@ export function exportInjectionsToPDF(injections, preferences, user) {
   // Tableau avec autotable
   autoTable(doc, {
     startY: 62,
-    head: [['N°', 'Date & Heure', 'Site (Quadrant)', 'N° de Lot', 'Date Expiration', 'Traçabilité']],
+    head: [['N°', 'Date', 'Site (Quadrant)', 'N° de Lot', 'Date Expiration', 'Traçabilité']],
     body: tableRows,
     theme: 'striped',
     headStyles: {
@@ -125,7 +125,7 @@ export function exportInjectionsToPDF(injections, preferences, user) {
         287
       );
       doc.text(
-        `Page ${data.pageNumber} sur ${pageCount} — Application Suivi VVG`,
+        `Page ${data.pageNumber} sur ${pageCount} — Application Suivi VYVGART`,
         196,
         287,
         { align: 'right' }
@@ -134,6 +134,6 @@ export function exportInjectionsToPDF(injections, preferences, user) {
   });
 
   // Sauvegarde et téléchargement du PDF
-  const filename = `suivi_injections_VVG_${format(new Date(), 'yyyy-MM-dd')}.pdf`;
+  const filename = `suivi_injections_VYVGART_${format(new Date(), 'yyyy-MM-dd')}.pdf`;
   doc.save(filename);
 }

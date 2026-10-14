@@ -1,15 +1,15 @@
 /**
- * Logique médicale de rotation des zones d'injection VVG
- * Ordre de rotation obligatoire : 1 → 2 → 4 → 3 → 1 → 2 → 4 → 3...
+ * Logique médicale de rotation des zones d'injection VYVGART
+ * Ordre de rotation : 1 → 2 → 3 → 4 → 1 → 2 → 3 → 4...
  * Cette rotation sur les 4 quadrants de l'abdomen prévient la lipohypertrophie
  * et favorise une absorption régulière du traitement hebdomadaire.
  */
 
 export const ZONE_ROTATION_MAP = {
   1: 2,
-  2: 4,
-  4: 3,
-  3: 1,
+  2: 3,
+  3: 4,
+  4: 1,
 };
 
 export const ZONES = {
@@ -52,7 +52,7 @@ export const ZONES = {
 };
 
 /**
- * Calcule la zone suivante selon la rotation 1 -> 2 -> 4 -> 3
+ * Calcule la zone suivante selon la rotation 1 -> 2 -> 3 -> 4
  * @param {number|null|undefined} lastZone - Numéro de la dernière zone injectée
  * @returns {number} Numéro de la prochaine zone recommandée
  */

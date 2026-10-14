@@ -7,10 +7,10 @@ import { registerSW } from 'virtual:pwa-register';
 registerSW({
   immediate: true,
   onNeedRefresh() {
-    console.log('Nouvelle version de Suivi VVG disponible');
+    console.log('Nouvelle version de Suivi VYVGART disponible');
   },
   onOfflineReady() {
-    console.log('Suivi VVG est maintenant opérationnel en mode hors-ligne');
+    console.log('Suivi VYVGART est maintenant opérationnel en mode hors-ligne');
   },
 });
 

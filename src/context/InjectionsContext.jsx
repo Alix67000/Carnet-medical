@@ -33,7 +33,7 @@ function getInitialDemoInjections() {
     {
       id: 'demo-inj-1',
       zone: 1, // Supérieur Droit
-      lotNumber: 'VVG-2026-A12',
+      lotNumber: 'VYV-2026-A12',
       date: sevenDaysAgo,
       expirationDate: addMonths(new Date(), 8),
       createdAt: sevenDaysAgo,
@@ -194,6 +194,58 @@ export function InjectionsProvider({ children }) {
     }
   };
 
+  // Modifier une injection existante
+  const updateInjection = async (injectionId, { date, zone, lotNumber, expirationDate }) => {
+    if (!user) throw new Error('Utilisateur non connecté');
+
+    const injectionDate = date instanceof Date ? date : new Date(date);
+    const expDate = expirationDate instanceof Date ? expirationDate : new Date(expirationDate);
+
+    // Mode Démo Local : mise à jour en mémoire vive uniquement
+    if (user.isDemo) {
+      setInjections((prev) =>
+        prev
+          .map((inj) => {
+            if (inj.id === injectionId) {
+              return {
+                ...inj,
+                date: injectionDate,
+                zone: Number(zone),
+                lotNumber: String(lotNumber).trim().toUpperCase(),
+                expirationDate: expDate,
+                updatedAt: new Date(),
+              };
+            }
+            return inj;
+          })
+          .sort((a, b) => b.date - a.date)
+      );
+      return;
+    }
+
+    // Mode Firestore en direct
+    const injectionDocRef = doc(db, 'users', user.uid, 'injections', injectionId);
+    const dateTimestamp = Timestamp.fromDate(injectionDate);
+    const expTimestamp = Timestamp.fromDate(expDate);
+
+    try {
+      await setDoc(
+        injectionDocRef,
+        {
+          date: dateTimestamp,
+          zone: Number(zone),
+          lotNumber: String(lotNumber).trim().toUpperCase(),
+          expirationDate: expTimestamp,
+          updatedAt: serverTimestamp(),
+        },
+        { merge: true }
+      );
+    } catch (err) {
+      handleFirestoreError(err, 'update', `users/${user.uid}/injections/${injectionId}`);
+      throw err;
+    }
+  };
+
   // Mettre à jour les préférences
   const updatePreferences = async (newPrefs) => {
     if (!user) throw new Error('Utilisateur non connecté');
@@ -263,6 +315,7 @@ export function InjectionsProvider({ children }) {
         loading,
         error,
         addInjection,
+        updateInjection,
         deleteInjection,
         updatePreferences,
         ...calculations,

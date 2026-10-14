@@ -51,7 +51,7 @@ export default function Home() {
           <div className="flex items-center justify-between gap-2 mb-3">
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-white/15 text-white backdrop-blur-xs border border-white/20">
               <Clock className="w-3.5 h-3.5" />
-              Traitement VVG · Tous les {preferences.intervalDays} jours
+              Traitement VYVGART · Tous les {preferences.intervalDays} jours
             </span>
 
             {scheduleStatus === 'today' && (
@@ -90,7 +90,7 @@ export default function Home() {
                 Prêt pour votre 1ère injection
               </h2>
               <p className="text-blue-100 text-xs sm:text-sm mt-2 leading-relaxed">
-                Enregistrez votre première injection VVG pour démarrer le calcul du calendrier et la rotation automatique des quadrants.
+                Enregistrez votre première injection VYVGART pour démarrer le calcul du calendrier et la rotation automatique des quadrants.
               </p>
             </div>
           )}
@@ -168,11 +168,11 @@ export default function Home() {
           <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
             Cycle de rotation des 4 quadrants
           </h3>
-          <span className="text-[11px] font-semibold text-blue-600">Ordre : 1 → 2 → 4 → 3</span>
+          <span className="text-[11px] font-semibold text-blue-600">Ordre : 1 → 2 → 3 → 4</span>
         </div>
 
         <div className="grid grid-cols-4 gap-2 text-center">
-          {[1, 2, 4, 3].map((zoneId, idx) => {
+          {[1, 2, 3, 4].map((zoneId) => {
             const isCurrentSuggested = nextSuggestedZone === zoneId;
             const isLast = lastInjection?.zone === zoneId;
 
@@ -191,8 +191,8 @@ export default function Home() {
                 <div className="text-[10px] mt-0.5 truncate">
                   {zoneId === 1 && 'Sup. Droit'}
                   {zoneId === 2 && 'Sup. Gauche'}
-                  {zoneId === 4 && 'Inf. Gauche'}
                   {zoneId === 3 && 'Inf. Droit'}
+                  {zoneId === 4 && 'Inf. Gauche'}
                 </div>
                 {isCurrentSuggested && (
                   <span className="inline-block mt-1 text-[9px] px-1 py-0.2 bg-blue-600 text-white rounded font-bold">

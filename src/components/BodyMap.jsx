@@ -94,7 +94,7 @@ export default function BodyMap({ selectedZone, onSelectZone, suggestedZone }) {
           <text x="255" y="207" fontSize="9" fill="#64748b" fontWeight="bold" textAnchor="middle">GAUCHE</text>
 
           {/* Les 4 Cercles d'injection interactifs */}
-          {[1, 2, 4, 3].map((zoneId) => {
+          {[1, 2, 3, 4].map((zoneId) => {
             const coord = zoneCoords[zoneId];
             const isSelected = selectedZone === zoneId;
             const isSuggested = suggestedZone === zoneId;
@@ -203,7 +203,7 @@ export default function BodyMap({ selectedZone, onSelectZone, suggestedZone }) {
       <div className="mt-3 p-2.5 bg-blue-50/50 rounded-xl border border-blue-100 flex items-start gap-2 text-xs text-blue-900">
         <span className="font-bold text-blue-700 shrink-0">Rotation :</span>
         <span>
-          Ordre recommandé : <strong>1 → 2 → 4 → 3</strong>. Alterner les quadrants évite l'épaississement sous-cutané et assure une efficacité optimale du VVG.
+          Ordre recommandé : <strong>1 → 2 → 3 → 4</strong>. Alterner les quadrants évite l'épaississement sous-cutané et assure une efficacité optimale de VYVGART.
         </span>
       </div>
     </div>
