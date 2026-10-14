@@ -95,7 +95,7 @@ export default function NewInjection() {
       // Redirection immédiate vers l'accueil
       navigate('/', { replace: true });
     } catch (err) {
-      console.error("Erreur lors de l'enregistrement:", err);
+      console.error("Erreur lors de l'enregistrement de l'injection [code]:", err?.code || 'unknown');
       setFormError("Impossible d'enregistrer l'injection. Veuillez vérifier votre connexion.");
       setIsSubmitting(false);
     }

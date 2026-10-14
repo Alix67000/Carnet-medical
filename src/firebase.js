@@ -18,20 +18,30 @@ googleProvider.setCustomParameters({
 
 /**
  * Gestionnaire d'erreurs standardisé pour Firestore
+ * - Ne journalise aucune information personnelle (UID, e-mail, données de compte).
+ * - Anonymise les chemins pour éliminer les identifiants utilisateurs ou documents.
+ * - Ne consigne que le code d'erreur et le type d'opération nécessaires au diagnostic.
  */
 export function handleFirestoreError(error, operationType, path = null) {
-  const errInfo = {
-    error: error instanceof Error ? error.message : String(error),
-    authInfo: {
-      userId: auth.currentUser?.uid || null,
-      email: auth.currentUser?.email || null,
-      emailVerified: auth.currentUser?.emailVerified || null,
-      isAnonymous: auth.currentUser?.isAnonymous || null,
-    },
-    operationType,
-    path
+  const errorCode = error?.code || (error instanceof Error ? error.name : 'unknown');
+
+  // Détermination d'une cible générique pour éviter d'exposer l'UID ou l'ID d'injection présent dans le chemin
+  let sanitizedTarget = 'collection';
+  if (typeof path === 'string') {
+    if (path.includes('injections')) {
+      sanitizedTarget = 'injections';
+    } else if (path.includes('settings')) {
+      sanitizedTarget = 'settings/preferences';
+    }
+  }
+
+  const sanitizedInfo = {
+    code: errorCode,
+    operation: operationType || 'unknown',
+    target: sanitizedTarget,
   };
-  console.error('Erreur Firestore: ', JSON.stringify(errInfo));
-  return errInfo;
+
+  console.error('Erreur Firestore:', JSON.stringify(sanitizedInfo));
+  return sanitizedInfo;
 }
 

@@ -55,7 +55,7 @@ export default function Settings() {
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (err) {
-      console.error('Erreur sauvegarde préférences:', err);
+      console.error('Erreur sauvegarde préférences [code]:', err?.code || 'unknown');
     } finally {
       setIsSaving(false);
     }

@@ -46,14 +46,14 @@ export function AuthProvider({ children }) {
       const result = await signInWithPopup(auth, googleProvider);
       return result.user;
     } catch (error) {
-      console.error('Erreur de connexion Google:', error);
+      console.error('Erreur de connexion Google [code]:', error?.code || 'unknown');
       let errorObj = {
-        code: error.code || 'unknown',
+        code: error?.code || 'unknown',
         message: 'Échec de la connexion Google.',
         details: null,
       };
 
-      if (error.code === 'auth/unauthorized-domain') {
+      if (error?.code === 'auth/unauthorized-domain') {
         const currentHostname = typeof window !== 'undefined' ? window.location.hostname : '';
         errorObj = {
           code: 'auth/unauthorized-domain',
@@ -61,16 +61,16 @@ export function AuthProvider({ children }) {
           domain: currentHostname,
           details: `Le domaine « ${currentHostname} » doit être ajouté dans Firebase Console > Authentication > Settings > Authorized domains.`,
         };
-      } else if (error.code === 'auth/popup-closed-by-user') {
+      } else if (error?.code === 'auth/popup-closed-by-user') {
         errorObj.message = 'La fenêtre de connexion a été fermée avant la fin.';
-      } else if (error.code === 'auth/popup-blocked') {
+      } else if (error?.code === 'auth/popup-blocked') {
         errorObj.message = 'Le pop-up a été bloqué par votre navigateur. Veuillez autoriser les fenêtres pop-up.';
-      } else if (error.code === 'auth/cancelled-popup-request') {
+      } else if (error?.code === 'auth/cancelled-popup-request') {
         errorObj.message = 'Opération de connexion annulée.';
-      } else if (error.code === 'auth/network-request-failed') {
+      } else if (error?.code === 'auth/network-request-failed') {
         errorObj.message = 'Erreur réseau lors de la communication avec les serveurs d\'authentification.';
-      } else if (error.message) {
-        errorObj.message = error.message;
+      } else if (error?.message) {
+        errorObj.message = 'Une erreur est survenue lors de la connexion.';
       }
 
       setAuthError(errorObj);
@@ -85,7 +85,7 @@ export function AuthProvider({ children }) {
     try {
       await signOut(auth);
     } catch (error) {
-      console.error('Erreur de déconnexion Firebase:', error);
+      console.error('Erreur de déconnexion Firebase [code]:', error?.code || 'unknown');
     }
   };
 

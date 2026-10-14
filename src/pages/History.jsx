@@ -33,7 +33,7 @@ export default function History() {
     try {
       exportInjectionsToPDF(injections, preferences, user);
     } catch (err) {
-      console.error("Erreur lors de l'exportation PDF:", err);
+      console.error("Erreur lors de l'exportation PDF [code]:", err?.name || 'unknown');
     } finally {
       setIsExporting(false);
     }
@@ -45,7 +45,7 @@ export default function History() {
       await deleteInjection(id);
       setConfirmDeleteId(null);
     } catch (err) {
-      console.error('Erreur suppression:', err);
+      console.error('Erreur suppression injection [code]:', err?.code || 'unknown');
     } finally {
       setDeletingId(null);
     }

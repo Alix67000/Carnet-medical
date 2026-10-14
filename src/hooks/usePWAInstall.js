@@ -51,7 +51,7 @@ export function usePWAInstall() {
         return true;
       }
     } catch (err) {
-      console.error("Erreur lors de l'installation PWA:", err);
+      console.error("Erreur lors de l'installation PWA [code]:", err?.name || 'unknown');
     }
     return false;
   };

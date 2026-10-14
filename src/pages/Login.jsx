@@ -46,7 +46,7 @@ export default function Login() {
       await loginGuest();
       navigate('/', { replace: true });
     } catch (err) {
-      console.error(err);
+      console.error('Erreur démarrage mode démo [code]:', err?.code || 'unknown');
     } finally {
       setIsSubmitting(false);
     }
