@@ -1,0 +1,70 @@
+{
+  "entities": {
+    "Injection": {
+      "title": "Injection",
+      "description": "Enregistrement d'une injection de traitement VVG avec traçabilité médicale",
+      "type": "object",
+      "properties": {
+        "date": {
+          "type": "string",
+          "description": "Date et heure de l'injection (ISO 8601 string ou Timestamp)"
+        },
+        "zone": {
+          "type": "integer",
+          "enum": [1, 2, 3, 4],
+          "description": "Numéro du quadrant abdominal de l'injection (1, 2, 3 ou 4)"
+        },
+        "lotNumber": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "description": "Numéro de lot du produit VVG"
+        },
+        "expirationDate": {
+          "type": "string",
+          "description": "Date d'expiration du lot VVG"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp de création de l'enregistrement"
+        }
+      },
+      "required": ["date", "zone", "lotNumber", "expirationDate", "createdAt"]
+    },
+    "UserPreferences": {
+      "title": "UserPreferences",
+      "description": "Préférences et paramètres utilisateur pour le suivi des injections",
+      "type": "object",
+      "properties": {
+        "intervalDays": {
+          "type": "integer",
+          "description": "Intervalle habituel en jours entre deux injections (défaut 7)"
+        },
+        "reminderTime": {
+          "type": "string",
+          "pattern": "^[0-2][0-9]:[0-5][0-9]$",
+          "description": "Heure du rappel au format HH:mm"
+        },
+        "notificationsEnabled": {
+          "type": "boolean",
+          "description": "Activation des notifications et rappels"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Date de mise à jour des préférences"
+        }
+      },
+      "required": ["intervalDays", "reminderTime", "notificationsEnabled"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/injections/{injectionId}": {
+      "schema": "Injection",
+      "description": "Historique des injections enregistrées pour l'utilisateur"
+    },
+    "/users/{userId}/settings/{settingId}": {
+      "schema": "UserPreferences",
+      "description": "Paramètres et préférences de l'utilisateur"
+    }
+  }
+}

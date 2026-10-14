@@ -1,0 +1,51 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidInjection(data) {
+      return data.keys().hasAll(['date', 'zone', 'lotNumber', 'expirationDate']) &&
+             data.zone is int &&
+             data.zone >= 1 && data.zone <= 4 &&
+             data.lotNumber is string &&
+             data.lotNumber.size() > 0 &&
+             data.lotNumber.size() <= 100;
+    }
+
+    function isValidPreferences(data) {
+      return data.keys().hasAll(['intervalDays', 'reminderTime', 'notificationsEnabled']) &&
+             data.intervalDays is int &&
+             data.intervalDays >= 1 && data.intervalDays <= 90 &&
+             data.reminderTime is string &&
+             data.reminderTime.size() <= 10 &&
+             data.notificationsEnabled is bool;
+    }
+
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+
+      match /injections/{injectionId} {
+        allow read, delete: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidInjection(request.resource.data);
+        allow update: if isOwner(userId) && isValidInjection(request.resource.data);
+      }
+
+      match /settings/{settingId} {
+        allow read, delete: if isOwner(userId);
+        allow create, update: if isOwner(userId) && isValidPreferences(request.resource.data);
+      }
+    }
+  }
+}
