@@ -15,7 +15,8 @@ import {
   ShieldCheck, 
   Info,
   Loader2,
-  Sparkles
+  Sparkles,
+  AlertCircle
 } from 'lucide-react';
 
 export default function Settings() {
@@ -294,13 +295,25 @@ export default function Settings() {
             />
           </div>
 
+          {user?.isDemo && (
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 space-y-1">
+              <div className="flex items-center gap-1.5 font-bold text-amber-950">
+                <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                <span>Mode Démonstration Actif</span>
+              </div>
+              <p className="text-[11px] leading-relaxed">
+                Ce mode fonctionne exclusivement en <strong>mémoire vive temporaire</strong> avec des <strong>données fictives</strong>. Aucune donnée médicale réelle n'est envoyée à Firestore ni stockée dans votre navigateur (localStorage/IndexedDB désactivés). La déconnexion ou la fermeture de l'onglet réinitialise tout.
+              </p>
+            </div>
+          )}
+
           <button
             type="button"
             onClick={logout}
             className="w-full py-2.5 px-4 rounded-xl border border-red-200 hover:bg-red-50 text-red-600 text-xs font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer"
           >
             <LogOut className="w-4 h-4" />
-            <span>Se déconnecter</span>
+            <span>{user?.isDemo ? 'Quitter le mode démo' : 'Se déconnecter'}</span>
           </button>
         </div>
 

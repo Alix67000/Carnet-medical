@@ -48,58 +48,31 @@ export function InjectionsProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Synchronisation des données (Firestore ou LocalStorage en mode démo)
+  // Synchronisation des données (Firestore pour utilisateur authentifié, ou mémoire vive en mode démo)
   useEffect(() => {
+    // Si déconnexion ou aucun utilisateur, vider immédiatement les données en mémoire
     if (!user) {
       setInjections([]);
       setPreferences(DEFAULT_PREFERENCES);
       setLoading(false);
+      setError(null);
       return;
     }
 
-    // Cas 1 : Mode Démonstration local (quand Anonymous auth ou Firestore n'est pas encore configuré)
+    // Cas 1 : Mode Démonstration local (données 100% fictives conservées uniquement en mémoire vive)
+    // Aucune interaction avec Firestore, aucun enregistrement dans localStorage ou IndexedDB.
     if (user.isDemo) {
-      const storageKeyInj = `vvg_demo_injections_${user.uid}`;
-      const storageKeyPref = `vvg_demo_prefs_${user.uid}`;
-
-      const savedInj = localStorage.getItem(storageKeyInj);
-      if (savedInj) {
-        try {
-          const parsed = JSON.parse(savedInj).map((item) => ({
-            ...item,
-            date: new Date(item.date),
-            expirationDate: item.expirationDate ? new Date(item.expirationDate) : null,
-            createdAt: new Date(item.createdAt || Date.now()),
-          }));
-          setInjections(parsed);
-        } catch (e) {
-          const initial = getInitialDemoInjections();
-          setInjections(initial);
-          localStorage.setItem(storageKeyInj, JSON.stringify(initial));
-        }
-      } else {
-        const initial = getInitialDemoInjections();
-        setInjections(initial);
-        localStorage.setItem(storageKeyInj, JSON.stringify(initial));
-      }
-
-      const savedPref = localStorage.getItem(storageKeyPref);
-      if (savedPref) {
-        try {
-          setPreferences(JSON.parse(savedPref));
-        } catch (e) {
-          setPreferences(DEFAULT_PREFERENCES);
-        }
-      } else {
-        setPreferences(DEFAULT_PREFERENCES);
-      }
-
+      setInjections(getInitialDemoInjections());
+      setPreferences(DEFAULT_PREFERENCES);
+      setError(null);
       setLoading(false);
       return;
     }
 
-    // Cas 2 : Utilisateur Firebase Authentifié (Firestore en direct)
+    // Cas 2 : Utilisateur Firebase Authentifié réel (Firestore en direct avec sécurité par UID)
     setLoading(true);
+    setError(null);
+
     const injectionsRef = collection(db, 'users', user.uid, 'injections');
     const injectionsQuery = query(injectionsRef, orderBy('date', 'desc'));
 
@@ -167,7 +140,7 @@ export function InjectionsProvider({ children }) {
     const injectionDate = date instanceof Date ? date : new Date(date);
     const expDate = expirationDate instanceof Date ? expirationDate : new Date(expirationDate);
 
-    // Mode Démo Local
+    // Mode Démo Local : mise à jour exclusive de la mémoire d'état React (aucun stockage local ni réseau)
     if (user.isDemo) {
       const newEntry = {
         id: `demo-inj-${Date.now()}`,
@@ -177,9 +150,7 @@ export function InjectionsProvider({ children }) {
         expirationDate: expDate,
         createdAt: new Date(),
       };
-      const updated = [newEntry, ...injections].sort((a, b) => b.date - a.date);
-      setInjections(updated);
-      localStorage.setItem(`vvg_demo_injections_${user.uid}`, JSON.stringify(updated));
+      setInjections((prev) => [newEntry, ...prev].sort((a, b) => b.date - a.date));
       return newEntry.id;
     }
 
@@ -207,11 +178,9 @@ export function InjectionsProvider({ children }) {
   const deleteInjection = async (injectionId) => {
     if (!user) throw new Error('Utilisateur non connecté');
 
-    // Mode Démo Local
+    // Mode Démo Local : filtrage en mémoire uniquement
     if (user.isDemo) {
-      const updated = injections.filter((inj) => inj.id !== injectionId);
-      setInjections(updated);
-      localStorage.setItem(`vvg_demo_injections_${user.uid}`, JSON.stringify(updated));
+      setInjections((prev) => prev.filter((inj) => inj.id !== injectionId));
       return;
     }
 
@@ -235,10 +204,9 @@ export function InjectionsProvider({ children }) {
       notificationsEnabled: Boolean(newPrefs.notificationsEnabled),
     };
 
-    // Mode Démo Local
+    // Mode Démo Local : mise à jour en mémoire vive uniquement
     if (user.isDemo) {
       setPreferences(payload);
-      localStorage.setItem(`vvg_demo_prefs_${user.uid}`, JSON.stringify(payload));
       return;
     }
 

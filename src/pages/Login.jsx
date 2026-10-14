@@ -123,8 +123,11 @@ export default function Login() {
               className="w-full py-2.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm transition-colors cursor-pointer"
             >
               <Play className="w-3.5 h-3.5 fill-current" />
-              <span>Tester immédiatement en mode Démo</span>
+              <span>Tester l'interface en mode Démo (données fictives en mémoire)</span>
             </button>
+            <p className="text-[10px] text-amber-800 text-center mt-1">
+              Mode temporaire non connecté : aucune donnée sauvegardée dans le cloud ni sur votre appareil.
+            </p>
           </div>
         </div>
       ) : (
@@ -201,20 +204,25 @@ export default function Login() {
           <span className="text-sm sm:text-base">Se connecter avec Google</span>
         </button>
 
-        {/* Option Démo Résiliente */}
-        <button
-          onClick={handleGuestLogin}
-          disabled={isSubmitting}
-          className="w-full py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer"
-        >
-          <Play className="w-3.5 h-3.5 text-blue-600 fill-current" />
-          <span>Continuer en mode démonstration privée</span>
-        </button>
+        {/* Option Démo Locale Éphémère */}
+        <div className="pt-1">
+          <button
+            onClick={handleGuestLogin}
+            disabled={isSubmitting}
+            className="w-full py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer"
+          >
+            <Play className="w-3.5 h-3.5 text-blue-600 fill-current" />
+            <span>Explorer en mode démonstration locale</span>
+          </button>
+          <p className="text-[10px] text-slate-400 text-center mt-1">
+            Données d'exemple en mémoire vive · Aucune donnée sauvegardée dans le cloud
+          </p>
+        </div>
 
         {/* Mention de sécurité obligatoire */}
         <div className="pt-2 flex items-center justify-center gap-1.5 text-slate-500 text-xs text-center">
           <Lock className="w-3.5 h-3.5 text-emerald-600" />
-          <span>Vos données sont sécurisées et privées</span>
+          <span>Vos données médicales sont privées et protégées</span>
         </div>
       </div>
     </div>

@@ -22,9 +22,9 @@ export default function OfflineIndicator() {
   if (isOnline) return null;
 
   return (
-    <div className="bg-amber-500 text-white text-xs font-medium py-1.5 px-4 text-center flex items-center justify-center gap-2 shadow-inner">
+    <div className="bg-amber-600 text-white text-xs font-medium py-1.5 px-4 text-center flex items-center justify-center gap-2 shadow-inner">
       <WifiOff className="w-3.5 h-3.5" />
-      <span>Mode hors-ligne : vos données sont enregistrées localement et synchronisées au retour du réseau.</span>
+      <span>Connexion réseau interrompue. Les synchronisations en direct nécessitent un accès Internet.</span>
     </div>
   );
 }

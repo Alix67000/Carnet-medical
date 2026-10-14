@@ -2,14 +2,11 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { 
   onAuthStateChanged, 
   signInWithPopup, 
-  signOut,
-  signInAnonymously
+  signOut
 } from 'firebase/auth';
 import { auth, googleProvider } from '../firebase';
 
 const AuthContext = createContext(null);
-
-const DEMO_USER_STORAGE_KEY = 'vvg_demo_user_session';
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -17,31 +14,25 @@ export function AuthProvider({ children }) {
   const [authError, setAuthError] = useState(null);
 
   useEffect(() => {
-    // Vérifie d'abord s'il existe une session démo locale active
-    const savedDemoUser = localStorage.getItem(DEMO_USER_STORAGE_KEY);
-    if (savedDemoUser) {
-      try {
-        const parsed = JSON.parse(savedDemoUser);
-        if (parsed && parsed.isDemo) {
-          setUser(parsed);
-          setLoading(false);
-        }
-      } catch (e) {
-        localStorage.removeItem(DEMO_USER_STORAGE_KEY);
-      }
+    // Nettoyer d'éventuelles clés de session ou données démo laissées par des versions antérieures dans localStorage
+    try {
+      const legacyKeys = [
+        'vvg_demo_user_session',
+        'vvg_demo_injections_demo-patient-local',
+        'vvg_demo_prefs_demo-patient-local'
+      ];
+      legacyKeys.forEach((key) => localStorage.removeItem(key));
+    } catch {
+      // Ignorer si localStorage n'est pas accessible
     }
 
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (currentUser) {
-        // Utilisateur Firebase authentifié (ex: Google)
-        localStorage.removeItem(DEMO_USER_STORAGE_KEY);
+        // Utilisateur Firebase authentifié réel (ex: Google)
         setUser(currentUser);
       } else {
-        // Si pas d'utilisateur Firebase et pas de session démo
-        const currentSavedDemo = localStorage.getItem(DEMO_USER_STORAGE_KEY);
-        if (!currentSavedDemo) {
-          setUser(null);
-        }
+        // Si l'utilisateur actuel n'est pas en session démo en mémoire, réinitialiser
+        setUser((prev) => (prev?.isDemo ? prev : null));
       }
       setLoading(false);
     });
@@ -52,7 +43,6 @@ export function AuthProvider({ children }) {
   const loginWithGoogle = async () => {
     setAuthError(null);
     try {
-      localStorage.removeItem(DEMO_USER_STORAGE_KEY);
       const result = await signInWithPopup(auth, googleProvider);
       return result.user;
     } catch (error) {
@@ -77,6 +67,8 @@ export function AuthProvider({ children }) {
         errorObj.message = 'Le pop-up a été bloqué par votre navigateur. Veuillez autoriser les fenêtres pop-up.';
       } else if (error.code === 'auth/cancelled-popup-request') {
         errorObj.message = 'Opération de connexion annulée.';
+      } else if (error.code === 'auth/network-request-failed') {
+        errorObj.message = 'Erreur réseau lors de la communication avec les serveurs d\'authentification.';
       } else if (error.message) {
         errorObj.message = error.message;
       }
@@ -87,42 +79,34 @@ export function AuthProvider({ children }) {
   };
 
   const logout = async () => {
+    // Réinitialisation immédiate de l'état en mémoire
+    setUser(null);
+    setAuthError(null);
     try {
-      localStorage.removeItem(DEMO_USER_STORAGE_KEY);
-      setUser(null);
       await signOut(auth);
     } catch (error) {
-      console.error('Erreur de déconnexion:', error);
-      setUser(null);
+      console.error('Erreur de déconnexion Firebase:', error);
     }
   };
 
-  // Option de session démonstration / invité résiliente
-  const loginGuest = async () => {
+  /**
+   * Mode Démonstration strictement local et éphémère.
+   * - Ne fait aucun appel à Firebase Auth (pas de signInAnonymously).
+   * - N'utilise pas localStorage ni IndexedDB pour stocker des données médicales.
+   * - Données purement conservées dans l'état React en mémoire vive.
+   * - Réinitialisé à la déconnexion ou au rechargement de page.
+   */
+  const startDemoMode = () => {
     setAuthError(null);
-
-    // 1. Essayer d'abord l'authentification anonyme Firebase si elle est activée sur le projet
-    try {
-      const res = await signInAnonymously(auth);
-      localStorage.removeItem(DEMO_USER_STORAGE_KEY);
-      setUser(res.user);
-      return res.user;
-    } catch (err) {
-      // Si la console Firebase bloque l'anonyme (auth/admin-restricted-operation), bascule en session locale démo
-      console.warn('Authentification anonyme Firebase non activée (admin-restricted), démarrage en mode démo local:', err?.code);
-      
-      const demoUser = {
-        uid: 'demo-patient-local',
-        email: 'patient.demo@carnet-medical.local',
-        displayName: 'Patient Démonstration',
-        isAnonymous: true,
-        isDemo: true,
-      };
-
-      localStorage.setItem(DEMO_USER_STORAGE_KEY, JSON.stringify(demoUser));
-      setUser(demoUser);
-      return demoUser;
-    }
+    const ephemeralDemoUser = {
+      uid: 'demo-local-ephemeral',
+      email: 'demo@carnet-medical.local',
+      displayName: 'Patient Démonstration (Local)',
+      isDemo: true,
+      isAnonymous: false,
+    };
+    setUser(ephemeralDemoUser);
+    return ephemeralDemoUser;
   };
 
   return (
@@ -133,7 +117,8 @@ export function AuthProvider({ children }) {
       setAuthError,
       loginWithGoogle,
       logout,
-      loginGuest
+      startDemoMode,
+      loginGuest: startDemoMode // Alias pour rétro-compatibilité
     }}>
       {children}
     </AuthContext.Provider>

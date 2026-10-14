@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
-import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
+import { getAuth, GoogleAuthProvider } from 'firebase/auth';
+import { getFirestore } from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
 
 // Initialisation de l'application Firebase
@@ -35,14 +35,3 @@ export function handleFirestoreError(error, operationType, path = null) {
   return errInfo;
 }
 
-// Vérification de la connexion Firestore au démarrage
-async function testConnection() {
-  try {
-    await getDocFromServer(doc(db, 'test', 'connection'));
-  } catch (error) {
-    if (error instanceof Error && error.message.includes('the client is offline')) {
-      console.warn('Mode hors-ligne ou client Firestore offline.');
-    }
-  }
-}
-testConnection();

@@ -9,7 +9,14 @@ export default function TopHeader() {
   const [showIOSModal, setShowIOSModal] = useState(false);
 
   return (
-    <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-4 py-3 safe-top">
+    <>
+      {user?.isDemo && (
+        <div className="bg-amber-100 border-b border-amber-300 text-amber-950 px-3 py-1.5 text-[11px] sm:text-xs font-semibold flex items-center justify-center gap-2 text-center">
+          <span className="w-2 h-2 rounded-full bg-amber-600 animate-pulse shrink-0" />
+          <span>Mode Démo Local · Données fictives temporaires en mémoire (non sauvegardées)</span>
+        </div>
+      )}
+      <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-4 py-3 safe-top">
       <div className="max-w-md mx-auto flex items-center justify-between">
         {/* Brand / Logo */}
         <div className="flex items-center gap-2.5">
@@ -109,5 +116,6 @@ export default function TopHeader() {
         </div>
       )}
     </header>
+    </>
   );
 }
