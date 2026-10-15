@@ -140,8 +140,8 @@ export default function Login() {
               <CheckCircle2 className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-xs font-semibold text-slate-800">Rotation intelligente des 4 quadrants</h3>
-              <p className="text-[11px] text-slate-500">Ordre médical : 1 → 2 → 3 → 4 pour préserver les tissus.</p>
+              <h3 className="text-xs font-semibold text-slate-800">Rotation des 4 quadrants</h3>
+              <p className="text-[11px] text-slate-500">Cycle configuré : 1 → 2 → 3 → 4. Suivez toujours les recommandations de votre soignant ou de la notice.</p>
             </div>
           </div>
 

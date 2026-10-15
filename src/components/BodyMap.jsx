@@ -7,7 +7,7 @@ import { Check, Sparkles } from 'lucide-react';
  * Silhouette anatomique du torse avec 4 quadrants abdominaux cliquables
  * @param {number} selectedZone - Zone actuellement sélectionnée (1, 2, 3 ou 4)
  * @param {Function} onSelectZone - Callback de changement de zone
- * @param {number} suggestedZone - Zone recommandée par l'algorithme de rotation
+ * @param {number} suggestedZone - Zone suggérée selon la rotation configurée dans l'application
  */
 export default function BodyMap({ selectedZone, onSelectZone, suggestedZone }) {
   // Coordonnées anatomiques des 4 zones sur le SVG (vue de face : Gauche de l'écran = Côté Droit du patient)
@@ -199,11 +199,11 @@ export default function BodyMap({ selectedZone, onSelectZone, suggestedZone }) {
         })}
       </div>
 
-      {/* Guide de rotation médicale */}
+      {/* Guide de rotation des zones */}
       <div className="mt-3 p-2.5 bg-blue-50/50 rounded-xl border border-blue-100 flex items-start gap-2 text-xs text-blue-900">
         <span className="font-bold text-blue-700 shrink-0">Rotation :</span>
         <span>
-          Ordre recommandé : <strong>1 → 2 → 3 → 4</strong>. Alterner les quadrants évite l'épaississement sous-cutané et assure une efficacité optimale de VYVGART.
+          Rotation configurée dans l'application : <strong>1 → 2 → 3 → 4 → 1</strong>. Suivez toujours les instructions de votre professionnel de santé ou de la notice pour le choix de vos sites d'injection.
         </span>
       </div>
     </div>

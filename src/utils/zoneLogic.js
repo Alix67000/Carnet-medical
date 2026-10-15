@@ -1,8 +1,8 @@
 /**
- * Logique médicale de rotation des zones d'injection VYVGART
- * Ordre de rotation : 1 → 2 → 3 → 4 → 1 → 2 → 3 → 4...
- * Cette rotation sur les 4 quadrants de l'abdomen prévient la lipohypertrophie
- * et favorise une absorption régulière du traitement hebdomadaire.
+ * Logique de rotation des zones d'injection configurée dans l'application
+ * Ordre configuré : 1 → 2 → 3 → 4 → 1...
+ * Cette alternance est proposée à titre indicatif selon les paramètres configurés.
+ * Suivre les instructions du professionnel de santé ou de la notice du traitement.
  */
 
 export const ZONE_ROTATION_MAP = {

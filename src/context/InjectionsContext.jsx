@@ -94,7 +94,7 @@ export function InjectionsProvider({ children }) {
         setLoading(false);
       },
       (err) => {
-        handleFirestoreError(err, 'list', `users/${user.uid}/injections`);
+        handleFirestoreError(err, 'list', 'injections');
         setError('Impossible de charger l\'historique des injections Firestore.');
         setLoading(false);
       }
@@ -118,12 +118,12 @@ export function InjectionsProvider({ children }) {
             ...DEFAULT_PREFERENCES,
             updatedAt: serverTimestamp(),
           }).catch((err) => {
-            handleFirestoreError(err, 'write', `users/${user.uid}/settings/preferences`);
+            handleFirestoreError(err, 'write', 'settings/preferences');
           });
         }
       },
       (err) => {
-        handleFirestoreError(err, 'get', `users/${user.uid}/settings/preferences`);
+        handleFirestoreError(err, 'get', 'settings/preferences');
       }
     );
 
@@ -169,7 +169,7 @@ export function InjectionsProvider({ children }) {
       });
       return docRef.id;
     } catch (err) {
-      handleFirestoreError(err, 'create', `users/${user.uid}/injections`);
+      handleFirestoreError(err, 'create', 'injections');
       throw err;
     }
   };
@@ -189,7 +189,7 @@ export function InjectionsProvider({ children }) {
       const docRef = doc(db, 'users', user.uid, 'injections', injectionId);
       await deleteDoc(docRef);
     } catch (err) {
-      handleFirestoreError(err, 'delete', `users/${user.uid}/injections/${injectionId}`);
+      handleFirestoreError(err, 'delete', 'injections');
       throw err;
     }
   };
@@ -241,7 +241,7 @@ export function InjectionsProvider({ children }) {
         { merge: true }
       );
     } catch (err) {
-      handleFirestoreError(err, 'update', `users/${user.uid}/injections/${injectionId}`);
+      handleFirestoreError(err, 'update', 'injections');
       throw err;
     }
   };
@@ -268,7 +268,7 @@ export function InjectionsProvider({ children }) {
       await setDoc(prefDocRef, { ...payload, updatedAt: serverTimestamp() }, { merge: true });
       setPreferences(payload);
     } catch (err) {
-      handleFirestoreError(err, 'update', `users/${user.uid}/settings/preferences`);
+      handleFirestoreError(err, 'update', 'settings/preferences');
       throw err;
     }
   };

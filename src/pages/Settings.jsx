@@ -337,6 +337,12 @@ export default function Settings() {
             )}
           </button>
         </div>
+
+        {/* Informations de Version & Crédit Auteur */}
+        <div className="pt-6 pb-2 text-center text-xs text-slate-400 font-medium tracking-tight space-y-1 select-none">
+          <p>Version 1.0.0 · Développé par Ali A.</p>
+          <p className="text-[11px] text-slate-400/80">Carnet médical personnel · Suivi VYVGART</p>
+        </div>
       </form>
     </div>
   );

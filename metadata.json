@@ -1,6 +1,6 @@
 {
-  "name": "Suivi VVG - Carnet d'Injections",
-  "description": "Application Progressive Web App (PWA) de suivi personnel d'injections de traitement VVG avec traçabilité médicale et rotation des zones.",
+  "name": "Suivi VYVGART - Carnet d'Injections",
+  "description": "Application Progressive Web App (PWA) de suivi personnel d'injections de traitement VYVGART avec traçabilité médicale et rotation des zones.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

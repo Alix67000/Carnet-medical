@@ -41,7 +41,7 @@ export function handleFirestoreError(error, operationType, path = null) {
     target: sanitizedTarget,
   };
 
-  console.error('Erreur Firestore:', JSON.stringify(sanitizedInfo));
+  console.error('Erreur Firestore [code]:', errorCode, '[operation]:', operationType || 'unknown', '[cible]:', sanitizedTarget);
   return sanitizedInfo;
 }
 
