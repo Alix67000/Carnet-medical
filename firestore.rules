@@ -30,7 +30,20 @@ service cloud.firestore {
              data.intervalDays >= 1 && data.intervalDays <= 90 &&
              data.reminderTime is string &&
              data.reminderTime.size() <= 10 &&
-             data.notificationsEnabled is bool;
+             data.notificationsEnabled is bool &&
+             (!('timeZone' in data) || (data.timeZone is string && data.timeZone.size() <= 100)) &&
+             (!('lastReminderSentForDate' in data) || (data.lastReminderSentForDate is string && data.lastReminderSentForDate.size() <= 50));
+    }
+
+    function isValidFcmToken(data) {
+      return data.keys().hasAll(['token', 'enabled']) &&
+             data.token is string &&
+             data.token.size() >= 10 &&
+             data.token.size() <= 500 &&
+             data.enabled is bool &&
+             (!('timeZone' in data) || (data.timeZone is string && data.timeZone.size() <= 100)) &&
+             (!('userAgent' in data) || (data.userAgent is string && data.userAgent.size() <= 255)) &&
+             (!('platform' in data) || (data.platform is string && data.platform.size() <= 100));
     }
 
     match /users/{userId} {
@@ -45,6 +58,12 @@ service cloud.firestore {
       match /settings/{settingId} {
         allow read, delete: if isOwner(userId);
         allow create, update: if isOwner(userId) && isValidPreferences(request.resource.data);
+      }
+
+      match /fcmTokens/{tokenId} {
+        allow read, delete: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidFcmToken(request.resource.data);
+        allow update: if isOwner(userId) && isValidFcmToken(request.resource.data);
       }
     }
   }

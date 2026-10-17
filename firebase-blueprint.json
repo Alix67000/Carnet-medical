@@ -49,12 +49,63 @@
           "type": "boolean",
           "description": "Activation des notifications et rappels"
         },
+        "timeZone": {
+          "type": "string",
+          "maxLength": 100,
+          "description": "Fuseau horaire IANA pour le calcul des rappels"
+        },
+        "lastReminderSentForDate": {
+          "type": "string",
+          "maxLength": 50,
+          "description": "Date de la dernière échéance d'injection ayant fait l'objet d'un rappel push"
+        },
         "updatedAt": {
           "type": "string",
           "description": "Date de mise à jour des préférences"
         }
       },
       "required": ["intervalDays", "reminderTime", "notificationsEnabled"]
+    },
+    "FcmToken": {
+      "title": "FcmToken",
+      "description": "Token de notification push Firebase Cloud Messaging enregistré pour un appareil utilisateur",
+      "type": "object",
+      "properties": {
+        "token": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 500,
+          "description": "Token d'enregistrement FCM du navigateur"
+        },
+        "enabled": {
+          "type": "boolean",
+          "description": "Indique si les notifications sont actives sur cet appareil"
+        },
+        "timeZone": {
+          "type": "string",
+          "maxLength": 100,
+          "description": "Fuseau horaire IANA de l'appareil"
+        },
+        "userAgent": {
+          "type": "string",
+          "maxLength": 255,
+          "description": "Agent utilisateur de l'appareil"
+        },
+        "platform": {
+          "type": "string",
+          "maxLength": 100,
+          "description": "Plateforme du système d'exploitation ou navigateur"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Date de création du token"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Dernière mise à jour du token"
+        }
+      },
+      "required": ["token", "enabled"]
     }
   },
   "firestore": {
@@ -65,6 +116,10 @@
     "/users/{userId}/settings/{settingId}": {
       "schema": "UserPreferences",
       "description": "Paramètres et préférences de l'utilisateur"
+    },
+    "/users/{userId}/fcmTokens/{tokenId}": {
+      "schema": "FcmToken",
+      "description": "Tokens de notification push autorisés pour les appareils de l'utilisateur"
     }
   }
 }

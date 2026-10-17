@@ -22,6 +22,7 @@ const DEFAULT_PREFERENCES = {
   intervalDays: 7,
   reminderTime: '09:00',
   notificationsEnabled: true,
+  timeZone: typeof Intl !== 'undefined' ? (Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Paris') : 'Europe/Paris',
 };
 
 // Données initiales d'exemple pour le mode démonstration
@@ -102,6 +103,11 @@ export function InjectionsProvider({ children }) {
 
     // Écoute des préférences utilisateur dans Firestore
     const prefDocRef = doc(db, 'users', user.uid, 'settings', 'preferences');
+    const userDocRef = doc(db, 'users', user.uid);
+
+    // Backfill automatique du document parent pour éliminer les documents fantômes dans Firestore
+    setDoc(userDocRef, { active: true, updatedAt: serverTimestamp() }, { merge: true }).catch(() => {});
+
     const unsubscribePrefs = onSnapshot(
       prefDocRef,
       (snapshot) => {
@@ -111,6 +117,7 @@ export function InjectionsProvider({ children }) {
             intervalDays: typeof data.intervalDays === 'number' ? data.intervalDays : 7,
             reminderTime: data.reminderTime || '09:00',
             notificationsEnabled: data.notificationsEnabled !== undefined ? Boolean(data.notificationsEnabled) : true,
+            timeZone: data.timeZone || (typeof Intl !== 'undefined' ? (Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Paris') : 'Europe/Paris'),
           });
         } else {
           // Initialise les préférences par défaut dans Firestore
@@ -254,6 +261,7 @@ export function InjectionsProvider({ children }) {
       intervalDays: Number(newPrefs.intervalDays) || 7,
       reminderTime: newPrefs.reminderTime || '09:00',
       notificationsEnabled: Boolean(newPrefs.notificationsEnabled),
+      timeZone: newPrefs.timeZone || preferences.timeZone || 'Europe/Paris',
     };
 
     // Mode Démo Local : mise à jour en mémoire vive uniquement

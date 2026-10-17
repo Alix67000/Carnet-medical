@@ -16,8 +16,24 @@ import {
   Info,
   Loader2,
   Sparkles,
-  AlertCircle
+  AlertCircle,
+  Radio,
+  Globe,
+  Trash2,
+  Send,
+  Lock,
+  RefreshCw
 } from 'lucide-react';
+import {
+  isPushNotificationSupported,
+  getNotificationPermission,
+  registerDeviceForPush,
+  unregisterDeviceForPush,
+  getRegisteredDevices,
+  sendFcmTestNotification,
+  initForegroundNotificationListener,
+  triggerLocalTestNotification
+} from '../services/fcmService';
 
 export default function Settings() {
   const { preferences, updatePreferences } = useInjections();
@@ -27,10 +43,22 @@ export default function Settings() {
   const [intervalDays, setIntervalDays] = useState(preferences.intervalDays || 7);
   const [reminderTime, setReminderTime] = useState(preferences.reminderTime || '09:00');
   const [notificationsEnabled, setNotificationsEnabled] = useState(preferences.notificationsEnabled ?? true);
+  const [timeZone, setTimeZone] = useState(
+    preferences.timeZone || (typeof Intl !== 'undefined' ? (Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Paris') : 'Europe/Paris')
+  );
 
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
-  const [testNotifMessage, setTestNotifMessage] = useState(null);
+
+  // États pour Firebase Cloud Messaging (FCM)
+  const [pushSupported, setPushSupported] = useState(true);
+  const [pushPermission, setPushPermission] = useState(getNotificationPermission());
+  const [registeredDevices, setRegisteredDevices] = useState([]);
+  const [isRegisteringPush, setIsRegisteringPush] = useState(false);
+  const [isTestingPush, setIsTestingPush] = useState(false);
+  const [pushStatusMessage, setPushStatusMessage] = useState(null);
+
+  const hasVapidKey = Boolean(import.meta.env.VITE_FIREBASE_VAPID_KEY);
 
   // Synchronise avec les préférences chargées
   useEffect(() => {
@@ -38,8 +66,35 @@ export default function Settings() {
       setIntervalDays(preferences.intervalDays || 7);
       setReminderTime(preferences.reminderTime || '09:00');
       setNotificationsEnabled(preferences.notificationsEnabled ?? true);
+      if (preferences.timeZone) {
+        setTimeZone(preferences.timeZone);
+      }
     }
   }, [preferences]);
+
+  // Initialisation et vérification du support FCM et des appareils enregistrés
+  useEffect(() => {
+    isPushNotificationSupported().then(setPushSupported);
+    setPushPermission(getNotificationPermission());
+
+    if (user && !user.isDemo) {
+      getRegisteredDevices(user).then(setRegisteredDevices);
+
+      // Écouteur des notifications reçues en direct au premier plan
+      let unsubscribe = () => {};
+      initForegroundNotificationListener((msg) => {
+        setPushStatusMessage({
+          type: 'info',
+          text: `Message reçu au 1er plan : « ${msg.title} »`,
+          details: msg.body
+        });
+      }).then((unsub) => {
+        unsubscribe = unsub;
+      });
+
+      return () => unsubscribe();
+    }
+  }, [user]);
 
   const handleSave = async (e) => {
     if (e) e.preventDefault();
@@ -51,6 +106,7 @@ export default function Settings() {
         intervalDays: Number(intervalDays) || 7,
         reminderTime,
         notificationsEnabled,
+        timeZone,
       });
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
@@ -61,37 +117,131 @@ export default function Settings() {
     }
   };
 
-  const handleTestNotification = async () => {
-    setTestNotifMessage(null);
-
-    // 1. Tester la permission du navigateur
-    if ('Notification' in window) {
-      let perm = Notification.permission;
-      if (perm === 'default') {
-        try {
-          perm = await Notification.requestPermission();
-        } catch (e) {
-          // ignore
-        }
-      }
-
-      if (perm === 'granted') {
-        try {
-          new Notification('Rappel Suivi VYVGART', {
-            body: `C'est le moment de réaliser votre injection de VYVGART (Zone recommandée calculée)`,
-            icon: '/pwa-192x192.png',
-            badge: '/pwa-192x192.png',
-          });
-          setTestNotifMessage('Notification système envoyée avec succès !');
-          return;
-        } catch (e) {
-          // Si dans iframe, fallback
-        }
-      }
+  // Enregistrement explicite de l'appareil pour les rappels push
+  const handleRegisterPush = async () => {
+    if (!user || user.isDemo) {
+      setPushStatusMessage({
+        type: 'error',
+        text: 'Veuillez vous connecter avec votre compte Google réel pour activer les rappels push.'
+      });
+      return;
     }
 
-    // Fallback notification in-app
-    setTestNotifMessage('Rappel simulé : C\'est le moment de réaliser votre injection hebdomadaire de VYVGART !');
+    setIsRegisteringPush(true);
+    setPushStatusMessage(null);
+
+    try {
+      const result = await registerDeviceForPush(user, timeZone);
+      setPushPermission(result.permission || getNotificationPermission());
+
+      if (result.success) {
+        setPushStatusMessage({
+          type: 'success',
+          text: 'Appareil enregistré avec succès pour recevoir les rappels push !',
+          details: `Fuseau horaire configuré : ${result.timeZone}. Vos rappels arriveront à ${reminderTime}.`
+        });
+        const devices = await getRegisteredDevices(user);
+        setRegisteredDevices(devices);
+      } else {
+        setPushStatusMessage({
+          type: 'error',
+          text: result.error || "Impossible d'activer les notifications push sur cet appareil.",
+          details: result.details
+        });
+      }
+    } catch (err) {
+      setPushStatusMessage({
+        type: 'error',
+        text: "Une erreur inattendue est survenue lors de l'enregistrement de l'appareil."
+      });
+    } finally {
+      setIsRegisteringPush(false);
+    }
+  };
+
+  // Désactivation des notifications sur l'appareil
+  const handleUnregisterDevice = async (tokenId = null) => {
+    if (!user || user.isDemo) return;
+
+    try {
+      await unregisterDeviceForPush(user, tokenId);
+      const devices = await getRegisteredDevices(user);
+      setRegisteredDevices(devices);
+      setPushStatusMessage({
+        type: 'info',
+        text: 'Appareil retiré de la liste des rappels push.'
+      });
+    } catch {
+      setPushStatusMessage({
+        type: 'error',
+        text: 'Erreur lors du retrait de l\'appareil.'
+      });
+    }
+  };
+
+  // Test de l'envoi push via Firebase Cloud Messaging
+  const handleTestFcmPush = async () => {
+    if (!user || user.isDemo) {
+      setPushStatusMessage({
+        type: 'error',
+        text: 'Le mode démonstration fonctionne en mémoire vive locale. Connectez-vous avec un compte Google réel pour tester Firebase Cloud Messaging.'
+      });
+      return;
+    }
+
+    if (registeredDevices.length === 0) {
+      setPushStatusMessage({
+        type: 'error',
+        text: 'Aucun appareil actif enregistré. Cliquez d\'abord sur "Activer les notifications push sur cet appareil" ci-dessous.'
+      });
+      return;
+    }
+
+    setIsTestingPush(true);
+    setPushStatusMessage(null);
+
+    try {
+      const res = await sendFcmTestNotification(user);
+      if (res.success) {
+        setPushStatusMessage({
+          type: 'success',
+          text: `Notification push envoyée via Firebase Cloud Messaging (${res.count} appareil(s) notifié(s)).`,
+          details: 'Si l\'application est fermée ou en arrière-plan, vérifiez la notification discrète sur votre écran verrouillé.'
+        });
+      } else {
+        setPushStatusMessage({
+          type: 'error',
+          text: res.error,
+          details: res.isFunctionMissing
+            ? "Pour tester l'envoi en direct, assurez-vous que la fonction Netlify 'send-test-reminder' est déployée et configurée avec la clé secrète Firebase Admin (FIREBASE_SERVICE_ACCOUNT)."
+            : undefined
+        });
+      }
+    } catch {
+      setPushStatusMessage({
+        type: 'error',
+        text: 'Échec de la communication avec le backend FCM.'
+      });
+    } finally {
+      setIsTestingPush(false);
+    }
+  };
+
+  // Test d'affichage local du Service Worker (pour tester le format discret sur l'appareil)
+  const handleLocalServiceWorkerTest = async () => {
+    const res = await triggerLocalTestNotification();
+    if (res.success) {
+      setPushStatusMessage({
+        type: 'success',
+        text: 'Notification locale de test affichée via le Service Worker.',
+        details: 'Titre : « Rappel de votre carnet médical » (format discret pour écran verrouillé).'
+      });
+    } else {
+      setPushStatusMessage({
+        type: 'error',
+        text: res.error || 'Impossible d\'afficher la notification locale.'
+      });
+    }
   };
 
   return (
@@ -113,17 +263,39 @@ export default function Settings() {
         </div>
       )}
 
-      {testNotifMessage && (
-        <div className="p-3.5 bg-blue-50 border border-blue-200 text-blue-800 text-xs rounded-2xl flex items-center justify-between shadow-xs animate-in fade-in">
-          <div className="flex items-center gap-2">
-            <Bell className="w-4 h-4 text-blue-600 shrink-0" />
-            <span>{testNotifMessage}</span>
+      {pushStatusMessage && (
+        <div 
+          className={`p-3.5 rounded-2xl text-xs border shadow-xs animate-in fade-in flex items-start justify-between gap-2 ${
+            pushStatusMessage.type === 'success'
+              ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
+              : pushStatusMessage.type === 'error'
+              ? 'bg-red-50 border-red-200 text-red-900'
+              : 'bg-blue-50 border-blue-200 text-blue-900'
+          }`}
+        >
+          <div className="space-y-1">
+            <div className="flex items-center gap-1.5 font-bold">
+              {pushStatusMessage.type === 'success' ? (
+                <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+              ) : pushStatusMessage.type === 'error' ? (
+                <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+              ) : (
+                <Bell className="w-4 h-4 text-blue-600 shrink-0" />
+              )}
+              <span>{pushStatusMessage.text}</span>
+            </div>
+            {pushStatusMessage.details && (
+              <p className="text-[11px] opacity-90 pl-5.5 leading-relaxed">
+                {pushStatusMessage.details}
+              </p>
+            )}
           </div>
           <button
-            onClick={() => setTestNotifMessage(null)}
-            className="text-slate-400 hover:text-slate-700 text-xs font-bold"
+            type="button"
+            onClick={() => setPushStatusMessage(null)}
+            className="text-slate-400 hover:text-slate-700 text-xs font-bold shrink-0 ml-1"
           >
-            Fermer
+            ✕
           </button>
         </div>
       )}
@@ -177,25 +349,32 @@ export default function Settings() {
             </div>
 
             <p className="text-[11px] text-slate-400">
-              Le protocole standard de VYVGART prescrit généralement 1 injection tous les 7 jours.
+              Le protocole prescrit généralement 1 injection tous les 7 jours.
             </p>
           </div>
         </div>
 
-        {/* Section Rappels & Notifications */}
+        {/* Section Rappels & Notifications Push (FCM) */}
         <div className="bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-5 shadow-xs space-y-4">
-          <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
-            <Bell className="w-4 h-4 text-emerald-600" />
-            <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-              Rappels & Notifications
-            </h3>
+          <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+            <div className="flex items-center gap-2">
+              <Bell className="w-4 h-4 text-emerald-600" />
+              <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                Rappels Push & Notifications
+              </h3>
+            </div>
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-bold border border-blue-200/50">
+              FCM Cloud
+            </span>
           </div>
 
           {/* Toggle Activer les notifications */}
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs font-semibold text-slate-800">Activer les notifications</p>
-              <p className="text-[11px] text-slate-400">Recevoir une alerte le jour de l'injection</p>
+              <p className="text-xs font-semibold text-slate-800">Activer les rappels d'injection</p>
+              <p className="text-[11px] text-slate-400">
+                Calcul automatique selon la dernière injection et votre intervalle
+              </p>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
               <input
@@ -208,35 +387,198 @@ export default function Settings() {
             </label>
           </div>
 
-          {/* Input Heure du rappel */}
+          {/* Paramètres de l'heure et du fuseau horaire */}
           {notificationsEnabled && (
-            <div className="space-y-1.5 pt-2 border-t border-slate-100 animate-in fade-in">
-              <label className="text-xs font-semibold text-slate-700 block">
-                Heure préférée du rappel
-              </label>
-              <div className="flex items-center gap-3">
-                <input
-                  type="time"
-                  value={reminderTime}
-                  onChange={(e) => setReminderTime(e.target.value)}
-                  className="w-32 px-3 py-2 rounded-xl border border-slate-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 text-slate-900 text-sm font-semibold bg-slate-50/50 outline-none"
-                />
-                <span className="text-xs text-slate-500">Heure locale</span>
+            <div className="space-y-3 pt-2 border-t border-slate-100 animate-in fade-in">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Heure du rappel */}
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-slate-700 block">
+                    Heure du rappel
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="time"
+                      value={reminderTime}
+                      onChange={(e) => setReminderTime(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 text-slate-900 text-sm font-semibold bg-slate-50/50 outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* Fuseau horaire */}
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-slate-700 flex items-center gap-1">
+                    <Globe className="w-3.5 h-3.5 text-slate-500" />
+                    <span>Fuseau horaire</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={timeZone}
+                    onChange={(e) => setTimeZone(e.target.value)}
+                    placeholder="Europe/Paris"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 text-slate-900 text-xs font-medium bg-slate-50/50 outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Bloc d'état FCM et Enregistrement de l'appareil */}
+              <div className="bg-slate-50 rounded-xl p-3.5 border border-slate-200/80 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-800">
+                    État des notifications push Web (PWA)
+                  </span>
+                  {/* Badge de permission */}
+                  <span 
+                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                      pushPermission === 'granted'
+                        ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                        : pushPermission === 'denied'
+                        ? 'bg-red-100 text-red-800 border border-red-300'
+                        : 'bg-amber-100 text-amber-800 border border-amber-300'
+                    }`}
+                  >
+                    <Radio className="w-2.5 h-2.5 animate-pulse" />
+                    {pushPermission === 'granted' && 'Permission accordée'}
+                    {pushPermission === 'denied' && 'Permission refusée'}
+                    {pushPermission === 'default' && 'Permission requise'}
+                    {pushPermission === 'unsupported' && 'Non supporté'}
+                  </span>
+                </div>
+
+                <p className="text-[11px] text-slate-600 leading-relaxed">
+                  Pour recevoir un rappel automatique même lorsque l'application ou l'onglet est fermé, autorisez les notifications push sur cet appareil.
+                </p>
+
+                {/* Bouton d'activation explicite de l'appareil */}
+                <div className="flex flex-wrap items-center gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={handleRegisterPush}
+                    disabled={isRegisteringPush || user?.isDemo}
+                    className="flex-1 py-2.5 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer disabled:opacity-50"
+                  >
+                    {isRegisteringPush ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Enregistrement du jeton...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Bell className="w-3.5 h-3.5" />
+                        <span>Activer le push sur cet appareil</span>
+                      </>
+                    )}
+                  </button>
+
+                  {registeredDevices.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => handleUnregisterDevice()}
+                      className="py-2.5 px-3 rounded-xl border border-slate-300 hover:bg-slate-100 text-slate-700 font-medium text-xs transition-colors cursor-pointer"
+                      title="Désactiver le push sur cet appareil"
+                    >
+                      Désactiver
+                    </button>
+                  )}
+                </div>
+
+                {/* Liste des appareils enregistrés pour cet utilisateur */}
+                {user && !user.isDemo && (
+                  <div className="pt-2 border-t border-slate-200 space-y-2">
+                    <div className="flex items-center justify-between text-[11px] text-slate-500">
+                      <span>Appareils autorisés ({registeredDevices.length}) :</span>
+                      <button
+                        type="button"
+                        onClick={() => getRegisteredDevices(user).then(setRegisteredDevices)}
+                        className="text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1 cursor-pointer"
+                      >
+                        <RefreshCw className="w-3 h-3" /> Actualiser
+                      </button>
+                    </div>
+
+                    {registeredDevices.length === 0 ? (
+                      <p className="text-[11px] text-slate-400 italic">
+                        Aucun appareil n'est encore enregistré pour recevoir les rappels push.
+                      </p>
+                    ) : (
+                      <div className="space-y-1.5 max-h-32 overflow-y-auto">
+                        {registeredDevices.map((dev) => (
+                          <div 
+                            key={dev.id}
+                            className="bg-white p-2 rounded-lg border border-slate-200 flex items-center justify-between gap-2 text-[11px]"
+                          >
+                            <div className="truncate">
+                              <span className="font-semibold text-slate-800 block truncate">
+                                {dev.platform || 'Navigateur Web'} · {dev.timeZone || 'UTC'}
+                              </span>
+                              <span className="text-[10px] text-slate-400 font-mono block truncate">
+                                {dev.id}
+                              </span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleUnregisterDevice(dev.id)}
+                              className="p-1 text-slate-400 hover:text-red-600 rounded transition-colors"
+                              title="Supprimer cet appareil"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Aperçu de confidentialité sur écran verrouillé */}
+              <div className="bg-blue-50/50 rounded-xl p-3 border border-blue-100 text-xs text-blue-900 space-y-1.5">
+                <div className="flex items-center gap-1.5 font-bold text-blue-950">
+                  <Lock className="w-3.5 h-3.5 text-blue-600" />
+                  <span>Confidentialité sur écran verrouillé :</span>
+                </div>
+                <div className="bg-white/80 p-2 rounded-lg border border-blue-200/60 font-sans space-y-0.5">
+                  <p className="font-bold text-slate-900 text-xs">Rappel de votre carnet médical</p>
+                  <p className="text-slate-600 text-[11px]">C'est le moment de réaliser votre injection programmée.</p>
+                </div>
+                <p className="text-[10px] text-slate-500 leading-tight">
+                  Aucun nom de traitement, ni numéro de lot ou données sensibles ne sont affichés sur l'écran verrouillé.
+                </p>
+              </div>
+
+              {/* Boutons de test : Réel FCM et Prévisualisation Locale */}
+              <div className="pt-1 space-y-2">
+                <button
+                  type="button"
+                  onClick={handleTestFcmPush}
+                  disabled={isTestingPush || user?.isDemo}
+                  className="w-full py-3 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 active:bg-slate-950 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer disabled:opacity-50"
+                >
+                  {isTestingPush ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Envoi du test FCM via Netlify Function...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>Tester l'envoi de notification push FCM</span>
+                    </>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleLocalServiceWorkerTest}
+                  className="w-full py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-[11px] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <Bell className="w-3.5 h-3.5 text-slate-500" />
+                  <span>Tester l'affichage immédiat du Service Worker (Local)</span>
+                </button>
               </div>
             </div>
           )}
-
-          {/* Bouton Tester une notification */}
-          <div className="pt-1">
-            <button
-              type="button"
-              onClick={handleTestNotification}
-              className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 text-xs font-semibold transition-colors flex items-center gap-2 cursor-pointer"
-            >
-              <Bell className="w-3.5 h-3.5 text-slate-600" />
-              <span>Tester une notification</span>
-            </button>
-          </div>
         </div>
 
         {/* Section PWA / Installation */}
@@ -302,7 +644,7 @@ export default function Settings() {
                 <span>Mode Démonstration Actif</span>
               </div>
               <p className="text-[11px] leading-relaxed">
-                Ce mode fonctionne exclusivement en <strong>mémoire vive temporaire</strong> avec des <strong>données fictives</strong>. Aucune donnée médicale réelle n'est envoyée à Firestore ni stockée dans votre navigateur (localStorage/IndexedDB désactivés). La déconnexion ou la fermeture de l'onglet réinitialise tout.
+                Ce mode fonctionne exclusivement en <strong>mémoire vive temporaire</strong> avec des <strong>données fictives</strong>. Aucune donnée médicale réelle n'est envoyée à Firestore ni stockée dans votre navigateur (localStorage/IndexedDB désactivés).
               </p>
             </div>
           )}

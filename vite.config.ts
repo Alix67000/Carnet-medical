@@ -12,6 +12,10 @@ export default defineConfig(() => {
       VitePWA({
         registerType: 'autoUpdate',
         includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'icon.svg'],
+        workbox: {
+          importScripts: ['/firebase-messaging-sw.js'],
+          globPatterns: ['**/*.{js,css,html,ico,png,svg,webmanifest}'],
+        },
         manifest: {
           id: '/',
           name: "Suivi VYVGART - Carnet d'Injections",
