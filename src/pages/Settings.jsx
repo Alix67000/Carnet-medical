@@ -57,6 +57,8 @@ export default function Settings() {
   const [isRegisteringPush, setIsRegisteringPush] = useState(false);
   const [isTestingPush, setIsTestingPush] = useState(false);
   const [pushStatusMessage, setPushStatusMessage] = useState(null);
+  const [devicesError, setDevicesError] = useState(null);
+  const [isLoadingDevices, setIsLoadingDevices] = useState(false);
 
   const hasVapidKey = Boolean(import.meta.env.VITE_FIREBASE_VAPID_KEY);
 
@@ -72,13 +74,48 @@ export default function Settings() {
     }
   }, [preferences]);
 
-  // Initialisation et vérification du support FCM et des appareils enregistrés
+  // Récupère les appareils enregistrés avec interception des erreurs Firestore (ex: permission-denied)
+  const refreshRegisteredDevices = async (currentUser = user) => {
+    if (!currentUser || currentUser.isDemo) {
+      setRegisteredDevices([]);
+      setDevicesError(null);
+      return [];
+    }
+
+    setIsLoadingDevices(true);
+    try {
+      const devices = await getRegisteredDevices(currentUser);
+      setRegisteredDevices(devices);
+      setDevicesError(null);
+      return devices;
+    } catch (err) {
+      setDevicesError(err?.code || 'error');
+      if (err?.code === 'permission-denied') {
+        setPushStatusMessage({
+          type: 'error',
+          text: 'Accès refusé aux appareils autorisés (permission-denied).',
+          details: "Les règles de sécurité Firestore n'autorisent pas la lecture de vos appareils. Vérifiez que votre session est valide.",
+        });
+      } else {
+        setPushStatusMessage({
+          type: 'error',
+          text: 'Impossible de récupérer la liste des appareils enregistrés.',
+          details: err?.message || err?.code || 'Erreur Firestore',
+        });
+      }
+      return null;
+    } finally {
+      setIsLoadingDevices(false);
+    }
+  };
+
+  // Initialisation et vérification du support FCM et des appareils enregistrés (Lieu 1: Chargement initial)
   useEffect(() => {
     isPushNotificationSupported().then(setPushSupported);
     setPushPermission(getNotificationPermission());
 
     if (user && !user.isDemo) {
-      getRegisteredDevices(user).then(setRegisteredDevices);
+      refreshRegisteredDevices(user);
 
       // Écouteur des notifications reçues en direct au premier plan
       let unsubscribe = () => {};
@@ -93,6 +130,9 @@ export default function Settings() {
       });
 
       return () => unsubscribe();
+    } else {
+      setRegisteredDevices([]);
+      setDevicesError(null);
     }
   }, [user]);
 
@@ -117,7 +157,7 @@ export default function Settings() {
     }
   };
 
-  // Enregistrement explicite de l'appareil pour les rappels push
+  // Enregistrement explicite de l'appareil pour les rappels push (Lieu 2: Après activation)
   const handleRegisterPush = async () => {
     if (!user || user.isDemo) {
       setPushStatusMessage({
@@ -131,6 +171,15 @@ export default function Settings() {
     setPushStatusMessage(null);
 
     try {
+      // 1. Enregistre d'abord les préférences complètes avec updatePreferences
+      await updatePreferences({
+        intervalDays: Number(intervalDays) || 7,
+        reminderTime,
+        notificationsEnabled,
+        timeZone,
+      });
+
+      // 2. Ensuite seulement, appelle registerDeviceForPush(user, timeZone)
       const result = await registerDeviceForPush(user, timeZone);
       setPushPermission(result.permission || getNotificationPermission());
 
@@ -140,8 +189,7 @@ export default function Settings() {
           text: 'Appareil enregistré avec succès pour recevoir les rappels push !',
           details: `Fuseau horaire configuré : ${result.timeZone}. Vos rappels arriveront à ${reminderTime}.`
         });
-        const devices = await getRegisteredDevices(user);
-        setRegisteredDevices(devices);
+        await refreshRegisteredDevices(user);
       } else {
         setPushStatusMessage({
           type: 'error',
@@ -159,14 +207,13 @@ export default function Settings() {
     }
   };
 
-  // Désactivation des notifications sur l'appareil
+  // Désactivation des notifications sur l'appareil (Lieu 3: Après désactivation)
   const handleUnregisterDevice = async (tokenId = null) => {
     if (!user || user.isDemo) return;
 
     try {
       await unregisterDeviceForPush(user, tokenId);
-      const devices = await getRegisteredDevices(user);
-      setRegisteredDevices(devices);
+      await refreshRegisteredDevices(user);
       setPushStatusMessage({
         type: 'info',
         text: 'Appareil retiré de la liste des rappels push.'
@@ -487,17 +534,27 @@ export default function Settings() {
                 {user && !user.isDemo && (
                   <div className="pt-2 border-t border-slate-200 space-y-2">
                     <div className="flex items-center justify-between text-[11px] text-slate-500">
-                      <span>Appareils autorisés ({registeredDevices.length}) :</span>
+                      <span>Appareils autorisés ({devicesError ? '—' : registeredDevices.length}) :</span>
                       <button
                         type="button"
-                        onClick={() => getRegisteredDevices(user).then(setRegisteredDevices)}
-                        className="text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1 cursor-pointer"
+                        onClick={() => refreshRegisteredDevices()}
+                        disabled={isLoadingDevices}
+                        className="text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1 cursor-pointer disabled:opacity-50"
                       >
-                        <RefreshCw className="w-3 h-3" /> Actualiser
+                        <RefreshCw className={`w-3 h-3 ${isLoadingDevices ? 'animate-spin' : ''}`} /> Actualiser
                       </button>
                     </div>
 
-                    {registeredDevices.length === 0 ? (
+                    {devicesError ? (
+                      <p className="text-[11px] text-red-500 italic">
+                        Impossible de charger les appareils autorisés.
+                      </p>
+                    ) : isLoadingDevices ? (
+                      <div className="flex items-center gap-1.5 text-[11px] text-slate-400 py-1">
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Chargement des appareils...</span>
+                      </div>
+                    ) : registeredDevices.length === 0 ? (
                       <p className="text-[11px] text-slate-400 italic">
                         Aucun appareil n'est encore enregistré pour recevoir les rappels push.
                       </p>

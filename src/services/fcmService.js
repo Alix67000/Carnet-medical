@@ -169,13 +169,6 @@ export async function registerDeviceForPush(user, customTimeZone) {
       hasPushDevices: true,
     }, { merge: true });
 
-    // Synchronisation du fuseau horaire dans les préférences
-    const prefDocRef = doc(db, 'users', user.uid, 'settings', 'preferences');
-    await setDoc(prefDocRef, {
-      timeZone: detectedTimeZone,
-      updatedAt: serverTimestamp(),
-    }, { merge: true });
-
     // Sauvegarde de l'ID du token courant pour la session
     try {
       sessionStorage.setItem(CURRENT_DEVICE_TOKEN_ID_KEY, tokenId);
@@ -260,7 +253,7 @@ export async function getRegisteredDevices(user) {
     }));
   } catch (err) {
     handleFirestoreError(err, 'list', 'fcmTokens');
-    return [];
+    throw err;
   }
 }
 
