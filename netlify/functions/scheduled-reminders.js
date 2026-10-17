@@ -10,7 +10,7 @@ import { getFirebaseAdmin, getZonedTimeInfo } from './utils/firebaseAdmin.js';
  * Durée moyenne par exécution : ~1 à 2 secondes (soit moins de 25 minutes de calcul par mois,
  * largement en-deçà des 100 heures et des 125 000 requêtes gratuites de Netlify).
  */
-const handler = async (event) => {
+const scheduledRemindersHandler = async (event, context) => {
   const now = new Date();
   console.log(`[Netlify Scheduled Reminders] Lancement de la vérification à ${now.toISOString()}`);
 
@@ -185,8 +185,9 @@ const handler = async (event) => {
 
 // Export standardisé pour Netlify Scheduled Functions (toutes les heures à xx:00)
 // Compatible avec les runtimes Netlify v1 (schedule) et v2 (config.schedule)
-export const handler = schedule('0 * * * *', handler);
+export const handler = schedule('0 * * * *', scheduledRemindersHandler);
 export const config = {
   schedule: '0 * * * *',
 };
-export { handler as scheduledRemindersHandler };
+export { scheduledRemindersHandler };
+export default handler;

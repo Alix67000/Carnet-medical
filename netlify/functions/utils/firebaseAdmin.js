@@ -1,4 +1,7 @@
-import admin from 'firebase-admin';
+import { initializeApp, getApps, cert, applicationDefault } from 'firebase-admin/app';
+import { getFirestore } from 'firebase-admin/firestore';
+import { getMessaging } from 'firebase-admin/messaging';
+import { getAuth } from 'firebase-admin/auth';
 
 let initializedApp = null;
 
@@ -10,20 +13,21 @@ let initializedApp = null;
 export function getFirebaseAdmin() {
   if (initializedApp) {
     return {
-      admin,
-      db: admin.firestore(),
-      messaging: admin.messaging(),
-      auth: admin.auth(),
+      app: initializedApp,
+      db: getFirestore(initializedApp),
+      messaging: getMessaging(initializedApp),
+      auth: getAuth(initializedApp),
     };
   }
 
-  if (admin.apps.length > 0) {
-    initializedApp = admin.apps[0];
+  const existingApps = getApps();
+  if (existingApps.length > 0) {
+    initializedApp = existingApps[0];
     return {
-      admin,
-      db: admin.firestore(),
-      messaging: admin.messaging(),
-      auth: admin.auth(),
+      app: initializedApp,
+      db: getFirestore(initializedApp),
+      messaging: getMessaging(initializedApp),
+      auth: getAuth(initializedApp),
     };
   }
 
@@ -35,7 +39,7 @@ export function getFirebaseAdmin() {
     try {
       const raw = process.env.FIREBASE_SERVICE_ACCOUNT.trim();
       const serviceAccount = JSON.parse(raw);
-      credential = admin.credential.cert(serviceAccount);
+      credential = cert(serviceAccount);
     } catch (err) {
       console.error('[Firebase Admin] Erreur lors du parsing JSON de FIREBASE_SERVICE_ACCOUNT:', err.message);
     }
@@ -45,7 +49,7 @@ export function getFirebaseAdmin() {
   if (!credential && process.env.FIREBASE_PRIVATE_KEY && process.env.FIREBASE_CLIENT_EMAIL) {
     try {
       const privateKey = process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n');
-      credential = admin.credential.cert({
+      credential = cert({
         projectId: projectId,
         clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
         privateKey: privateKey,
@@ -58,7 +62,7 @@ export function getFirebaseAdmin() {
   // Option 3 : Fallback si GOOGLE_APPLICATION_CREDENTIALS est défini
   if (!credential) {
     if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-      credential = admin.credential.applicationDefault();
+      credential = applicationDefault();
     } else {
       throw new Error(
         "Clé Firebase Admin manquante : Veuillez renseigner FIREBASE_SERVICE_ACCOUNT (ou FIREBASE_CLIENT_EMAIL + FIREBASE_PRIVATE_KEY) dans les variables d'environnement de Netlify."
@@ -66,16 +70,16 @@ export function getFirebaseAdmin() {
     }
   }
 
-  initializedApp = admin.initializeApp({
+  initializedApp = initializeApp({
     credential,
     projectId,
   });
 
   return {
-    admin,
-    db: admin.firestore(),
-    messaging: admin.messaging(),
-    auth: admin.auth(),
+    app: initializedApp,
+    db: getFirestore(initializedApp),
+    messaging: getMessaging(initializedApp),
+    auth: getAuth(initializedApp),
   };
 }
 

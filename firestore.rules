@@ -39,10 +39,10 @@ service cloud.firestore {
       return data.keys().hasAll(['token', 'enabled']) &&
              data.token is string &&
              data.token.size() >= 10 &&
-             data.token.size() <= 500 &&
+             data.token.size() <= 2048 &&
              data.enabled is bool &&
              (!('timeZone' in data) || (data.timeZone is string && data.timeZone.size() <= 100)) &&
-             (!('userAgent' in data) || (data.userAgent is string && data.userAgent.size() <= 255)) &&
+             (!('userAgent' in data) || (data.userAgent is string && data.userAgent.size() <= 500)) &&
              (!('platform' in data) || (data.platform is string && data.platform.size() <= 100));
     }
 

@@ -135,3 +135,5 @@ export async function handler(event, context) {
     };
   }
 }
+
+export default handler;
